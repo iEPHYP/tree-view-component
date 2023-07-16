@@ -1,6 +1,6 @@
-import { TreeItemView } from "../components/TreeItem/TreeItem.types";
+import { ITreeItem } from "../components/TreeItem";
 
 export interface State {
-  treeItems: TreeItemView[];
+  treeItems: ITreeItem[];
   treeItemIdOnEditMode: string | null;
 }

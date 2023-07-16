@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import { createStore } from "redux";
-import { Provider } from "react-redux";
+import { Provider as ReduxStoreProvider } from "react-redux";
 
 import { saveTreeItems, loadTreeItems } from "./localStorage";
 
@@ -21,9 +21,9 @@ store.subscribe(async () => {
 
 ReactDOM.render(
   <React.StrictMode>
-    <Provider store={store}>
+    <ReduxStoreProvider store={store}>
       <App />
-    </Provider>
+    </ReduxStoreProvider>
   </React.StrictMode>,
   document.getElementById("root")
 );

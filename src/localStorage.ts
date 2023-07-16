@@ -1,6 +1,6 @@
-import { TreeItemView } from "./components/TreeItem/TreeItem.types";
+import { ITreeItem } from "./components/TreeItem";
 
-export const loadTreeItems = (): TreeItemView[] => {
+export const loadTreeItems = (): ITreeItem[] => {
   try {
     const stateFromLocalStorage = localStorage.getItem("treeItems");
 
@@ -8,7 +8,7 @@ export const loadTreeItems = (): TreeItemView[] => {
       return [];
     }
 
-    const treeItems: TreeItemView[] = JSON.parse(stateFromLocalStorage);
+    const treeItems: ITreeItem[] = JSON.parse(stateFromLocalStorage);
 
     return treeItems.filter((treeItem) => treeItem.title);
   } catch (err) {
@@ -18,7 +18,7 @@ export const loadTreeItems = (): TreeItemView[] => {
   }
 };
 
-export const saveTreeItems = (treeItems: TreeItemView[]) => {
+export const saveTreeItems = (treeItems: ITreeItem[]) => {
   try {
     localStorage.setItem("treeItems", JSON.stringify(treeItems));
   } catch (err) {

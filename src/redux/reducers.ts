@@ -35,28 +35,26 @@ export const treeItems: Reducer<
           id,
           parentId,
           title: "",
-          allParentIds: [
-            ...(allParentIdsOfParent ? allParentIdsOfParent : []),
-            parentId,
-          ],
+          allParentIds: [...allParentIdsOfParent, parentId],
         },
       ];
     }
     case "EDIT_TREE_ITEM": {
       const { id, title } = action;
-      const treeItemIndex = treeItems.findIndex((item) => item.id === id);
+      const editingTreeItemIndex = treeItems.findIndex(
+        (item) => item.id === id
+      );
       const newTreeItems = [...treeItems];
-      newTreeItems[treeItemIndex].title = title;
+      newTreeItems[editingTreeItemIndex].title = title;
 
       return newTreeItems;
     }
     case "DELETE_TREE_ITEM": {
       const { id: deletingItemId } = action;
+
       return treeItems.filter(
         ({ id, allParentIds }) =>
-          allParentIds &&
-          !allParentIds.includes(deletingItemId) &&
-          id !== deletingItemId
+          id !== deletingItemId && !allParentIds.includes(deletingItemId)
       );
     }
     default:

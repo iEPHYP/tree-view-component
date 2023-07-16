@@ -1,15 +1,12 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { v4 as uuid } from "uuid";
-
-import Input, { InputProps } from "@material-ui/core/Input";
+import Input from "@material-ui/core/Input";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemText from "@material-ui/core/ListItemText";
 import ListItemSecondaryAction from "@material-ui/core/ListItemSecondaryAction";
-
 import KeyboardArrowRightIcon from "@material-ui/icons/KeyboardArrowRight";
 import KeyboardArrowDownIcon from "@material-ui/icons/KeyboardArrowDown";
-
 import IconButton from "@material-ui/core/IconButton";
 import AddIcon from "@material-ui/icons/Add";
 import EditIcon from "@material-ui/icons/Edit";
@@ -22,73 +19,93 @@ import {
   setTreeItemIdOnEditMode,
   State,
 } from "../../redux";
+import { ITreeItem } from "./TreeItem.interfaces";
 
-import { TreeItemViewProps } from "./TreeItem.types";
+interface TreeItemProps {
+  treeItem: ITreeItem;
+}
 
-export const TreeItem: React.FC<TreeItemViewProps> = ({ treeItem }) => {
-  const { title } = treeItem;
+export const TreeItem: React.FC<TreeItemProps> = ({
+  treeItem: { id, title, allParentIds },
+}) => {
   const dispatch = useDispatch();
-  const treeItems = useSelector<State, State["treeItems"]>(
-    (state) => state.treeItems
+  const childTreeItems = useSelector<State, State["treeItems"]>((state) =>
+    state.treeItems.filter((child) => child.parentId === id)
   );
 
   const treeItemIdOnEditMode = useSelector<
     State,
     State["treeItemIdOnEditMode"]
   >((state) => state.treeItemIdOnEditMode);
-  const [collapsed, setCollapsed] = React.useState(true);
-  const [changeTitle, setChangedTitle] = React.useState(title);
+  const onEditMode = useMemo(
+    () => treeItemIdOnEditMode === id,
+    [id, treeItemIdOnEditMode]
+  );
+  const [collapsed, setCollapsed] = useState(true);
+  const [editingTitle, setEditingTitle] = useState(title);
 
-  const handleChildTreeItemAddition = () => {
-    const id = uuid();
-    dispatch(addChildTreeItem(id, treeItem.id, treeItem.allParentIds));
-    dispatch(setTreeItemIdOnEditMode(id));
+  const handleChildTreeItemAdding = () => {
+    const newChildTreeItemId = uuid();
+    dispatch(
+      addChildTreeItem({ id: newChildTreeItemId, parentId: id, allParentIds })
+    );
+    dispatch(setTreeItemIdOnEditMode(newChildTreeItemId));
     setCollapsed(false);
   };
 
   const handleTreeItemEdition = () => {
-    dispatch(setTreeItemIdOnEditMode(treeItem.id));
+    setEditingTitle(title);
+    dispatch(setTreeItemIdOnEditMode(id));
   };
 
   const handleTreeItemDeletion = () => {
-    dispatch(deleteTreeItem(treeItem.id));
+    dispatch(deleteTreeItem(id));
   };
 
-  const handleSaveTreeItemTitle: (value: string) => void = (value: string) => {
+  const handleSaveTreeItemTitle = (value: string) => {
     if (!value && !title) {
       handleTreeItemDeletion();
     } else {
-      dispatch(editTreeItem(treeItem.id, value || title));
-      dispatch(setTreeItemIdOnEditMode(null));
-      setChangedTitle(value || title);
+      dispatch(editTreeItem({ id, title: value || title }));
+      setEditingTitle(value || title);
     }
+    dispatch(setTreeItemIdOnEditMode(null));
   };
 
-  const handleEnterPress: InputProps["onKeyDown"] = ({
-    currentTarget: { value },
-    key,
-  }) => {
-    if (key === "Enter") {
-      handleSaveTreeItemTitle(value);
-    }
-  };
-
-  const handleOnBlur: InputProps["onBlur"] = ({ currentTarget: { value } }) => {
-    handleSaveTreeItemTitle(value);
-  };
+  const arrowVisibilityProps = useMemo(
+    () => ({
+      style: {
+        visibility: childTreeItems.length ? "visible" : "hidden",
+      } as React.CSSProperties,
+    }),
+    [childTreeItems.length]
+  );
 
   return (
     <>
-      <ListItem divider={true} onClick={() => setCollapsed(!collapsed)}>
-        {collapsed ? <KeyboardArrowRightIcon /> : <KeyboardArrowDownIcon />}
-        {treeItemIdOnEditMode === treeItem.id ? (
+      <ListItem
+        divider={true}
+        onClick={() => !onEditMode && setCollapsed(!collapsed)}
+      >
+        {collapsed ? (
+          <KeyboardArrowRightIcon {...arrowVisibilityProps} />
+        ) : (
+          <KeyboardArrowDownIcon {...arrowVisibilityProps} />
+        )}
+        {onEditMode ? (
           <Input
-            style={{ marginRight: "20%", color: "orange" }}
-            onKeyDown={handleEnterPress}
-            onChange={(event) => setChangedTitle(event.currentTarget.value)}
-            onBlur={handleOnBlur}
-            value={changeTitle}
-            placeholder={"new node"}
+            style={{ marginRight: "20%" }}
+            onKeyDown={({ currentTarget: { value }, key }) => {
+              if (key === "Enter") {
+                handleSaveTreeItemTitle(value);
+              }
+            }}
+            onChange={(event) => setEditingTitle(event.currentTarget.value)}
+            onBlur={(event) => {
+              handleSaveTreeItemTitle(event.currentTarget.value);
+            }}
+            value={editingTitle}
+            placeholder="Enter node name"
             disableUnderline={true}
             fullWidth={true}
             autoFocus={true}
@@ -97,7 +114,7 @@ export const TreeItem: React.FC<TreeItemViewProps> = ({ treeItem }) => {
           <ListItemText primary={title} />
         )}
         <ListItemSecondaryAction>
-          <IconButton onClick={handleChildTreeItemAddition} edge="end">
+          <IconButton onClick={handleChildTreeItemAdding} edge="end">
             <AddIcon />
           </IconButton>
           <IconButton onClick={handleTreeItemEdition} edge="end">
@@ -111,11 +128,9 @@ export const TreeItem: React.FC<TreeItemViewProps> = ({ treeItem }) => {
 
       {!collapsed && (
         <div style={{ paddingLeft: 10 }}>
-          {treeItems
-            .filter((child) => child.parentId === treeItem.id)
-            .map((child) => (
-              <TreeItem key={child.id} treeItem={child} />
-            ))}
+          {childTreeItems.map((child) => (
+            <TreeItem key={child.id} treeItem={child} />
+          ))}
         </div>
       )}
     </>
